@@ -1,0 +1,8 @@
+streamlit
+streamlit-drawable-canvas
+matplotlib
+pandas
+numpy
+scipy
+Pillow
+supabase
