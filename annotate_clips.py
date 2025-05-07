@@ -73,7 +73,6 @@ elif st.session_state.page == "upload":
 elif st.session_state.page == "annotate":
     st.title("🖍️ Annotate Public Recordings")
 
-    from streamlit.experimental_rerun import rerun  # or use st.experimental_rerun()
 
     # === Your original annotation setup ===
     DATA_DIR = os.path.expanduser('~/Documents/nfc-detector/data/wav')
