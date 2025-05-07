@@ -12,16 +12,37 @@ from scipy.io import wavfile
 from scipy.signal import spectrogram
 from streamlit_drawable_canvas import st_canvas
 
+from utils.supabase_utils import get_supabase_client, upload_to_supabase
+from utils.spectrogram import compute_zoomed_spectrogram, render_spectrogram_image
+
+
 # === SUPABASE CONFIG ===
-SUPABASE_URL = "https://vyndvwdwqyrnzxjdcakf.supabase.co"
-SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ5bmR2d2R3cXlybnp4amRjYWtmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY2NTc0NTksImV4cCI6MjA2MjIzMzQ1OX0._HhABMUYPP_86KJxq5Tnj6-KxU1XK06nUpkV10avMyg"
+supabase = get_supabase_client()
 
+if uploaded_file is not None:
+    filename = uploaded_file.name
 
-@st.cache_resource
-def load_supabase():
-    return create_client(SUPABASE_URL, SUPABASE_KEY)
+    with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
+        tmp_file.write(uploaded_file.read())
+        temp_path = tmp_file.name
 
-supabase: Client = load_supabase()
+    with open(temp_path, "rb") as f:
+        file_data = f.read()
+
+    response = upload_to_supabase(
+        client=supabase,
+        bucket_name="nfc-uploads",
+        filename=filename,
+        file_data=file_data
+    )
+
+    if "error" not in response:
+        st.success(f"Uploaded {filename} to cloud storage!")
+    else:
+        st.error(f"Upload failed: {response['error']['message']}")
+
+    os.remove(temp_path)
+
 
 # --- Page navigation setup ---
 if "page" not in st.session_state:
@@ -163,44 +184,18 @@ elif st.session_state.page == "annotate":
     audio = audio / np.max(np.abs(audio)) * 6.0  # normalize + amplify
     
     # --- Compute Spectrogram ---
-    freqs, times, Sxx = spectrogram(audio, fs=sample_rate, nperseg=fft_size, noverlap=int(0.75 * fft_size))
-    Sxx = 10 * np.log10(Sxx + 1e-10)
-    freq_mask = freqs <= 11000
-    Sxx = Sxx[freq_mask, :]
-    freqs = freqs[freq_mask]
-    
-    # --- Zoom Sliders ---
-    st.markdown("### Zoom Controls")
-    zoom_time_range = st.slider("Zoom Time (s)", 0.0, float(times[-1]), (0.0, float(times[-1])), step=0.01)
-    zoom_freq_range = st.slider("Zoom Frequency (Hz)", 0, 11000, (0, 11000), step=100)
-    
-    time_mask = (times >= zoom_time_range[0]) & (times <= zoom_time_range[1])
-    freq_mask = (freqs >= zoom_freq_range[0]) & (freqs <= zoom_freq_range[1])
-    
-    Sxx_zoom = Sxx[freq_mask, :][:, time_mask]
-    freqs_zoom = freqs[freq_mask]
-    times_zoom = times[time_mask]
-    extent = [times_zoom[0], times_zoom[-1], freqs_zoom[0], freqs_zoom[-1]]
-    
-    # Normalize and invert for Audacity-style (black = loud)
-    Sxx_norm = (Sxx_zoom - np.min(Sxx_zoom)) / (np.max(Sxx_zoom) - np.min(Sxx_zoom))
-    Sxx_inverted = 1.0 - Sxx_norm
-    
-    # Create high-resolution spectrogram image
-    fig, ax = plt.subplots(figsize=(10, 6), dpi=200)  # Bigger and sharper
-    ax.imshow(Sxx_inverted, aspect='auto', extent=extent, origin='lower',
-              cmap='gray', interpolation='bilinear')  # Smooth rendering
-    ax.axis('off')
-    
-    # Save to buffer
-    buf = io.BytesIO()
-    plt.savefig(buf, format='png', dpi=200, bbox_inches='tight', pad_inches=0)
-    plt.close(fig)
-    buf.seek(0)
-    img = Image.open(buf)
-    img_width, img_height = img.size
-    
-    
+   # Sliders (keep these lines as-is)
+zoom_time_range = st.slider("Zoom Time (s)", 0.0, float(len(audio) / sample_rate), (0.0, float(len(audio) / sample_rate)), step=0.01)
+zoom_freq_range = st.slider("Zoom Frequency (Hz)", 0, 11000, (0, 11000), step=100)
+
+# Use utility functions
+Sxx_inverted, extent = compute_zoomed_spectrogram(
+    audio, sample_rate, fft_size, zoom_time_range, zoom_freq_range
+)
+
+img, (img_width, img_height) = render_spectrogram_image(Sxx_inverted, extent)
+
+        
     # --- Drawable Canvas ---
     st.markdown("### Draw bounding boxes and select label")
     canvas_result = st_canvas(
