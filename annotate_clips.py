@@ -77,6 +77,16 @@ elif st.session_state.page == "upload":
 elif st.session_state.page == "annotate":
     st.title("🖍️ Annotate Public Recordings")
 
+    # === User login ===
+    if "user" not in st.session_state:
+        st.session_state.user = ""
+
+    st.session_state.user = st.text_input("Your name or email (for tracking):", value=st.session_state.user)
+
+    if not st.session_state.user.strip():
+        st.warning("Please enter your name or email to begin annotating.")
+        st.stop()
+
     SPECIES_MAP = {
         "AMCO": "American Coot",
         "AMPI": "American Pipit",
@@ -245,6 +255,7 @@ elif st.session_state.page == "annotate":
                     "end_time": float(max(start_time, end_time)),
                     "low_freq": float(min(low_freq, high_freq)),
                     "high_freq": float(max(low_freq, high_freq))
+                    "annotator": st.session_state.get("user", "anonymous")
                 }
 
                 response = insert_annotation(supabase, annotation)
