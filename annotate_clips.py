@@ -137,7 +137,9 @@ elif st.session_state.page == "annotate":
         "DBUP": "Double-banded Upland Plover",
         "DEJU": "Dark-eyed Junco",
         "DICK": "Dickcissel",
+        "GBHE": "Great Blue Heron",
         "GCKI": "Golden-crowned Kinglet",
+        "GRHE": "Green Heron"
         "GRSP": "Grasshopper Sparrow",
         "GRYE": "Greater Yellowlegs",
         "HETH": "Hermit Thrush",
