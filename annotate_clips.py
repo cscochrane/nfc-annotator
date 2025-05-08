@@ -77,7 +77,7 @@ elif st.session_state.page == "upload":
             response = supabase.storage.from_(bucket_name).upload(
                 f"{filename}", file_data, {"content-type": "audio/wav", "x-upsert": "true"}
             )
-            if "error" not in response:
+            if response is not None and getattr(response, "error", None) is None:
                 st.success(f"Uploaded {filename} to cloud storage!")
 
                 # Log uploader info
