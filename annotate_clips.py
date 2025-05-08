@@ -230,4 +230,5 @@ elif st.session_state.page == "annotate":
             st.experimental_rerun()
         else:
             st.warning("No boxes drawn.")
+    
     st.button("⬅️ Back to Home", on_click=lambda: go_to("home"))
