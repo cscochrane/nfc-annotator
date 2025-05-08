@@ -85,7 +85,7 @@ elif st.session_state.page == "upload":
                 # Log uploader info
                 upload_record = {
                     "filename": filename,
-                    "uploader": st.session_state.get("user", "anonymous"),
+                    "uploader": str(st.session_state.get("user", "anonymous") or "anonymous"),
                     "timestamp": datetime.utcnow().isoformat()
                 }
                 result = supabase.table("uploads").insert(upload_record).execute()
