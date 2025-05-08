@@ -74,7 +74,7 @@ elif st.session_state.page == "upload":
         # Upload to Supabase bucket
         bucket_name = "nfc-uploads"
         response = supabase.storage.from_(bucket_name).upload(
-            f"{filename}", file_data, {"content-type": "audio/wav"}
+            f"{filename}", file_data, {"content-type": "audio/wav", "x-upsert": "true"}
         )
 
         if "error" not in response:
