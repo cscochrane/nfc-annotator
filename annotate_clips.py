@@ -235,6 +235,111 @@ elif st.session_state.page == "annotate":
     )
 
     img, (img_width, img_height) = render_spectrogram_image(Sxx_inverted, extent)
+    import streamlit.components.v1 as components
+    from io import BytesIO
+    import base64
+    import json
+    
+    # --- Convert PIL image to base64 ---
+    def pil_image_to_base64(pil_img):
+        buf = BytesIO()
+        pil_img.save(buf, format="PNG")
+        byte_img = buf.getvalue()
+        return base64.b64encode(byte_img).decode()
+    
+    img_base64 = pil_image_to_base64(img)
+    
+    # --- Draw bounding boxes ---
+    components.html(f"""
+    <div>
+      <canvas id="canvas" width="{img_width}" height="{img_height}"
+              style="border:1px solid #000000;
+                     background-image: url('data:image/png;base64,{img_base64}');
+                     background-size: contain;"></canvas>
+      <script>
+        const canvas = document.getElementById("canvas");
+        const ctx = canvas.getContext("2d");
+        let drawing = false;
+        let startX, startY;
+        let boxes = [];
+    
+        canvas.addEventListener("mousedown", function(e) {{
+            const rect = canvas.getBoundingClientRect();
+            startX = e.clientX - rect.left;
+            startY = e.clientY - rect.top;
+            drawing = true;
+        }});
+    
+        canvas.addEventListener("mouseup", function(e) {{
+            if (!drawing) return;
+            drawing = false;
+            const rect = canvas.getBoundingClientRect();
+            const endX = e.clientX - rect.left;
+            const endY = e.clientY - rect.top;
+            const x = Math.min(startX, endX);
+            const y = Math.min(startY, endY);
+            const w = Math.abs(endX - startX);
+            const h = Math.abs(endY - startY);
+            boxes.push({{x, y, w, h}});
+            redraw();
+            Streamlit.setComponentValue(JSON.stringify(boxes));
+        }});
+    
+        function redraw() {{
+            const img = new Image();
+            img.src = canvas.style.backgroundImage.replace("url(\\"","").replace("\\")","");
+            img.onload = () => {{
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                ctx.lineWidth = 2;
+                ctx.strokeStyle = "red";
+                ctx.fillStyle = "rgba(255, 0, 0, 0.3)";
+                boxes.forEach(box => {{
+                    ctx.strokeRect(box.x, box.y, box.w, box.h);
+                    ctx.fillRect(box.x, box.y, box.w, box.h);
+                }});
+            }};
+        }}
+      </script>
+    </div>
+    """, height=img_height + 20, key="canvas-boxes")
+    # Retrieve bounding boxes
+    box_json = st._legacy_get_widget_value("canvas-boxes")
+    if st.button("Save Annotation"):
+        if box_json:
+            try:
+                rects = json.loads(box_json)
+                for box in rects:
+                    x0, x1 = box["x"], box["x"] + box["w"]
+                    y0, y1 = box["y"], box["y"] + box["h"]
+    
+                    start_time = extent[0] + (x0 / img_width) * (extent[1] - extent[0])
+                    end_time   = extent[0] + (x1 / img_width) * (extent[1] - extent[0])
+                    high_freq  = extent[2] + ((img_height - y0) / img_height) * (extent[3] - extent[2])
+                    low_freq   = extent[2] + ((img_height - y1) / img_height) * (extent[3] - extent[2])
+    
+                    annotation = {
+                        "filename": file_name,
+                        "label": final_label,
+                        "start_time": float(min(start_time, end_time)),
+                        "end_time": float(max(start_time, end_time)),
+                        "low_freq": float(min(low_freq, high_freq)),
+                        "high_freq": float(max(low_freq, high_freq)),
+                        "annotator": st.session_state.get("user", "anonymous")
+                    }
+    
+                    response = insert_annotation(supabase, annotation)
+                    if response.get("status_code", 200) >= 400:
+                        st.error(f"❌ Error saving: {response}")
+                st.success(f"✅ Saved {len(rects)} annotations for {file_name}")
+                st.experimental_rerun()
+            except Exception as e:
+                st.error(f"❌ Failed to save annotations: {e}")
+        else:
+            st.warning("No boxes drawn.")
+
+    
+
 
 
         
