@@ -140,9 +140,9 @@ elif st.session_state.page == "annotate":
     
     unlabeled_files = [f for f in wav_files if os.path.basename(f) not in labels_df['file'].unique()]
     if not unlabeled_files:
-    st.success("🎉 All clips labeled!")
-    st.button("⬅️ Back to Home", on_click=lambda: go_to("home"))  # ✅ Add this here
-    st.stop()
+        st.success("🎉 All clips labeled!")
+        st.button("⬅️ Back to Home", on_click=lambda: go_to("home"))  # ✅ Add this here
+        st.stop()
     
     current_file = unlabeled_files[0]
     file_name = os.path.basename(current_file)
