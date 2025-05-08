@@ -146,10 +146,17 @@ elif st.session_state.page == "annotate":
     all_remote_files = list_wav_files(supabase)
 
     # Get already-annotated filenames
-    annotated_files = set(get_annotated_filenames(supabase))
+    user_annotated_files = set(
+        row["filename"]
+        for row in supabase.table("annotations")
+                           .select("filename")
+                           .eq("annotator", st.session_state.user.strip())
+                           .execute()
+                           .data
+    )
 
     # Filter only files not yet annotated
-    unlabeled_files = [f for f in all_remote_files if f not in annotated_files]
+    unlabeled_files = [f for f in all_remote_files if f not in user_annotated_files]
 
     # Stop if everything is labeled
     if not unlabeled_files:
