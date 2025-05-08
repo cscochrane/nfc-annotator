@@ -220,9 +220,6 @@ elif st.session_state.page == "annotate":
     current_file = unlabeled_files[0]
     file_name = os.path.basename(current_file)
     
-    st.subheader(f"Annotating: {file_name}")
-    st.audio(current_file)  # ✅ Audio playback
-    
     # --- FFT Window Size ---
     fft_size = st.selectbox("FFT Window Size", [256, 512, 1024, 2048], index=2)
     
