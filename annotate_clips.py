@@ -69,11 +69,6 @@ elif st.session_state.page == "upload":
 elif st.session_state.page == "annotate":
     st.title("🖍️ Annotate Public Recordings")
 
-
-    # === Your original annotation setup ===
-    DATA_DIR = os.path.expanduser('~/Documents/nfc-detector/data/wav')
-    LABELS_FILE = os.path.expanduser('~/Documents/nfc-detector/data/bbox_labels.csv')
-
     SPECIES_MAP = {
         "AMCO": "American Coot",
         "AMPI": "American Pipit",
@@ -103,7 +98,7 @@ elif st.session_state.page == "annotate":
         "NOWA": "Northern Waterthrush",
         "OVEN": "Ovenbird",
         "Other": "Other",
-        "PYNU_LBDO": "Pinyon/Long-billed Dowitcher",
+        "PYNU_LBDO": "Pygmy Nuthatch/Long-billed Dowitcher",
         "Peep": "Unidentified Peep",
         "SAVS": "Savannah Sparrow",
         "SORA": "Sora",
@@ -129,11 +124,11 @@ elif st.session_state.page == "annotate":
     LABEL_OPTIONS = sorted(SPECIES_MAP.keys())
     
     # --- Load files ---
-    wav_files = sorted(glob.glob(os.path.join(DATA_DIR, '*.wav')))
-    if os.path.exists(LABELS_FILE):
-        labels_df = pd.read_csv(LABELS_FILE)
-    else:
-        labels_df = pd.DataFrame(columns=['file', 'label', 'start_time', 'end_time', 'low_freq', 'high_freq'])
+    # --- Load .wav files from Supabase and filter annotated ones ---
+    all_files = list_wav_files(supabase)
+    annotated_files = get_annotated_filenames(supabase)
+    unlabeled_files = [f for f in all_files if f not in annotated_files]
+
     
     # --- UI ---
     st.title("NFC Annotator with Bounding Boxes")
