@@ -32,3 +32,10 @@ def download_wav_file(client: Client, filename: str, bucket_name: str = "nfc-upl
         temp_file.close()
         return temp_file.name
     return None
+
+def get_annotated_filenames(client: Client):
+    response = client.table("annotations").select("filename").execute()
+    if response.data:
+        return list(set([row["filename"] for row in response.data]))
+    return []
+
