@@ -217,14 +217,11 @@ elif st.session_state.page == "annotate":
         st.button("⬅️ Back to Home", on_click=lambda: go_to("home"))  # ✅ Add this here
         st.stop()
     
-    current_file = unlabeled_files[0]
-    file_name = os.path.basename(current_file)
-    
     # --- FFT Window Size ---
     fft_size = st.selectbox("FFT Window Size", [256, 512, 1024, 2048], index=2)
     
     # --- Load Audio ---
-    sample_rate, audio = wavfile.read(current_file)
+    sample_rate, audio = wavfile.read(local_wav_path)  # ✅
     if audio.ndim > 1:
         audio = audio[:, 0]
     audio = audio / np.max(np.abs(audio)) * 6.0  # normalize + amplify
