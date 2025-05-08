@@ -262,11 +262,11 @@ elif st.session_state.page == "annotate":
         }
     
         response = insert_annotation(supabase, annotation)
-        if response.status_code >= 400:
-            st.error(f"❌ Failed to insert annotation: {response.json()}")
+
+        if getattr(response, "error", None):
+            st.error(f"❌ Failed to insert annotation: {response.error}")
         else:
             st.success(f"✅ Saved annotation for {file_name}")
-            st.experimental_rerun()
-    
+            st.rerun()
 
     st.button("⬅️ Back to Home", on_click=lambda: go_to("home"))
