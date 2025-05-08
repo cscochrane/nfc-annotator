@@ -12,7 +12,15 @@ from scipy.io import wavfile
 from scipy.signal import spectrogram
 from streamlit_drawable_canvas import st_canvas
 
-from utils.supabase_utils import get_supabase_client, upload_to_supabase
+from utils.supabase_utils import (
+    get_supabase_client,
+    upload_to_supabase,
+    list_wav_files,
+    download_wav_file,
+    get_annotated_filenames,
+    insert_annotation
+)
+
 from utils.spectrogram import compute_zoomed_spectrogram, render_spectrogram_image
 
 
