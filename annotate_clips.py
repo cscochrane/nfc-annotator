@@ -88,7 +88,7 @@ elif st.session_state.page == "upload":
                 result = supabase.table("uploads").insert(upload_record).execute()
 
                 if result.get("status_code", 200) >= 400:
-                st.warning(f"Upload succeeded but failed to log uploader info: {result}")
+                    st.warning(f"Upload succeeded but failed to log uploader info: {result}")
             else:
                 st.error(f"Upload failed: {response['error']}")
         except Exception as e:
