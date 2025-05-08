@@ -261,7 +261,7 @@ elif st.session_state.page == "annotate":
                     "start_time": float(min(start_time, end_time)),
                     "end_time": float(max(start_time, end_time)),
                     "low_freq": float(min(low_freq, high_freq)),
-                    "high_freq": float(max(low_freq, high_freq))
+                    "high_freq": float(max(low_freq, high_freq)),
                     "annotator": st.session_state.get("user", "anonymous")
                 }
 
