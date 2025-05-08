@@ -135,9 +135,16 @@ elif st.session_state.page == "annotate":
     # --- Load .wav files from Supabase and filter annotated ones ---
     all_files = list_wav_files(supabase)
     annotated_files = get_annotated_filenames(supabase)
-    unlabeled_files = [f for f in all_files if f not in annotated_files]
+    # Get all .wav files in the Supabase bucket
+    all_remote_files = list_wav_files()
 
-    
+    # Get filenames already annotated (e.g., ['clip001.wav', ...])
+    labeled_files = set(labels_df['file'].unique())
+
+    # Keep only files not yet annotated
+    unlabeled_files = [f for f in all_remote_files if os.path.basename(f) not in labeled_files]
+
+
     # --- UI ---
     st.title("NFC Annotator with Bounding Boxes")
     
