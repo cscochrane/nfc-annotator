@@ -276,6 +276,7 @@ elif st.session_state.page == "annotate":
     components.html(f"""
         <div>
           <canvas id="canvas" width="{img.width}" height="{img.height}" style="border:1px solid #000000; background-image: url('data:image/png;base64,{img_base64}'); background-size: contain;"></canvas>
+          <input type="hidden" id="box_data" name="box_data">
           <script>
             const canvas = document.getElementById("canvas");
             const ctx = canvas.getContext("2d");
@@ -302,27 +303,27 @@ elif st.session_state.page == "annotate":
               const h = Math.abs(startY - endY);
               rects.push({{x, y, w, h}});
               redraw();
-              Streamlit.setComponentValue(rects);
+              window.parent.postMessage({{type: "streamlit:setComponentValue", value: rects}}, "*");
             }});
     
             function redraw() {{
-              ctx.clearRect(0, 0, canvas.width, canvas.height);
-              ctx.drawImage(canvas, 0, 0);
-              rects.forEach(r => {{
-                ctx.beginPath();
-                ctx.rect(r.x, r.y, r.w, r.h);
-                ctx.fillStyle = "rgba(255, 0, 0, 0.3)";
-                ctx.fill();
-                ctx.stroke();
-              }});
+              const img = new Image();
+              img.src = canvas.style.backgroundImage.replace("url(\\"", "").replace("\\")", "");
+              img.onload = () => {{
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                ctx.lineWidth = 2;
+                ctx.strokeStyle = "red";
+                rects.forEach(r => {{
+                  ctx.strokeRect(r.x, r.y, r.w, r.h);
+                }});
+              }};
             }}
           </script>
         </div>
-    """, height=img.height + 10)
+    """, height=img.height + 20)
 
 
-
-    
     # --- Species label ---
     search_term = st.text_input("Search for species (code or name):")
     filtered_options = [code for code in LABEL_OPTIONS if search_term.lower() in code.lower() or search_term.lower() in SPECIES_MAP[code].lower()]
@@ -337,7 +338,7 @@ elif st.session_state.page == "annotate":
     import json
     
     # This retrieves the canvas data (bounding boxes)
-    box_data = st.experimental_get_query_params().get("Streamlit.setComponentValue", [])
+    box_data = st._get_widget_value("spectrogram_canvas") or []
     
     if st.button("Save Annotation"):
         if box_data:
