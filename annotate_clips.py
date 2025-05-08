@@ -48,10 +48,10 @@ if st.session_state.page == "home":
 
 
 # === Upload UI (inserted before annotation UI) ===
+# === Upload UI ===
 elif st.session_state.page == "upload":
     st.title("📤 Upload Your NFC Recording")
 
-    # === User login ===
     if "user" not in st.session_state:
         st.session_state.user = ""
 
@@ -73,41 +73,39 @@ elif st.session_state.page == "upload":
         with open(temp_path, "rb") as f:
             file_data = f.read()
 
-        # Upload to Supabase bucket
         bucket_name = "nfc-uploads"
         try:
+            # Upload to Supabase Storage
             response = supabase.storage.from_(bucket_name).upload(
-                f"{filename}", file_data, {"content-type": "audio/wav", "x-upsert": "true"}
+                filename, file_data, {"content-type": "audio/wav", "x-upsert": "true"}
             )
-            if response is not None and getattr(response, "error", None) is None:
-                st.success(f"Uploaded {filename} to cloud storage!")
 
-                # Log uploader info
+            if not getattr(response, "error", None):
+                st.success(f"✅ Uploaded {filename} to cloud storage!")
+
+                # Insert upload metadata into the 'uploads' table
                 upload_record = {
                     "filename": filename,
-                    "uploader": st.session_state.get("user", "anonymous"),
-                    "timestamp": datetime.utcnow().isoformat()
+                    "uploader": st.session_state.user.strip(),
+                    "timestamp": datetime.utcnow().isoformat(),
+                    "bucket": bucket_name,
+                    "path": f"{bucket_name}/{filename}"
                 }
-                from dataclasses import asdict
 
-                upload_record = asdict(upload_response)
                 result = supabase.table("uploads").insert(upload_record).execute()
 
                 if getattr(result, "status_code", 200) >= 400:
                     st.warning(f"Upload succeeded but failed to log uploader info: {result}")
+            else:
+                st.error(f"Upload failed: {response.error['message']}")
 
         except Exception as e:
             import traceback
             st.error("❌ Upload crashed:")
-            st.code(traceback.format_exc())  # Shows the exact StorageApiError message
+            st.code(traceback.format_exc())
 
-        else:
-            if response and isinstance(response, dict) and 'error' in response and 'message' in response['error']:
-                st.error(f"Upload failed: {response['error']['message']}")
-            else:
-                st.error("Upload failed: An unexpected error occurred.")
-                st.write("Response object:", response)
-        os.remove(temp_path)
+        finally:
+            os.remove(temp_path)
 
     st.button("⬅️ Back to Home", on_click=lambda: go_to("home"))
 
