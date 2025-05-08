@@ -255,31 +255,72 @@ elif st.session_state.page == "annotate":
     st.markdown("### Draw bounding boxes for flight calls")
     
     # Convert spectrogram to PIL Image if needed
+    import streamlit.components.v1 as components
+    import base64
+    from PIL import Image
+    from io import BytesIO
+    
+    # Convert the spectrogram image to base64 so it can be rendered in HTML
+    def pil_image_to_base64(img):
+        buf = BytesIO()
+        img.save(buf, format="PNG")
+        byte_im = buf.getvalue()
+        return base64.b64encode(byte_im).decode()
+    
+    # Ensure PIL Image
     if isinstance(img, np.ndarray):
         img = Image.fromarray(img)
     
-    canvas_result = st_canvas(
-        fill_color="rgba(255, 0, 0, 0.3)",
-        stroke_width=2,
-        background_image=img,
-        update_streamlit=True,
-        height=img.height,
-        width=img.width,
-        drawing_mode="rect",
-        key="canvas"
-    )
+    img_base64 = pil_image_to_base64(img)
     
-    # Show box data and let user assign species
-    if canvas_result.json_data is not None:
-        objects = canvas_result.json_data.get("objects", [])
-        for i, obj in enumerate(objects):
-            left = int(obj["left"])
-            top = int(obj["top"])
-            width = int(obj["width"])
-            height = int(obj["height"])
-            st.markdown(f"**Box {i+1}:**")
-            label = st.selectbox(f"Label for Box {i+1}", options=species_options, key=f"label_{i}")
-            st.text(f"Coordinates: left={left}, top={top}, width={width}, height={height}")
+    # Inject custom HTML + JS canvas for annotation
+    components.html(f"""
+        <div>
+          <canvas id="canvas" width="{img.width}" height="{img.height}" style="border:1px solid #000000; background-image: url('data:image/png;base64,{img_base64}'); background-size: contain;"></canvas>
+          <script>
+            const canvas = document.getElementById("canvas");
+            const ctx = canvas.getContext("2d");
+            let drawing = false;
+            let rects = [];
+            let startX, startY;
+    
+            canvas.addEventListener("mousedown", function(e) {{
+              drawing = true;
+              const rect = canvas.getBoundingClientRect();
+              startX = e.clientX - rect.left;
+              startY = e.clientY - rect.top;
+            }});
+    
+            canvas.addEventListener("mouseup", function(e) {{
+              if (!drawing) return;
+              const rect = canvas.getBoundingClientRect();
+              const endX = e.clientX - rect.left;
+              const endY = e.clientY - rect.top;
+              drawing = false;
+              const x = Math.min(startX, endX);
+              const y = Math.min(startY, endY);
+              const w = Math.abs(startX - endX);
+              const h = Math.abs(startY - endY);
+              rects.push({{x, y, w, h}});
+              redraw();
+              Streamlit.setComponentValue(rects);
+            }});
+    
+            function redraw() {{
+              ctx.clearRect(0, 0, canvas.width, canvas.height);
+              ctx.drawImage(canvas, 0, 0);
+              rects.forEach(r => {{
+                ctx.beginPath();
+                ctx.rect(r.x, r.y, r.w, r.h);
+                ctx.fillStyle = "rgba(255, 0, 0, 0.3)";
+                ctx.fill();
+                ctx.stroke();
+              }});
+            }}
+          </script>
+        </div>
+    """, height=img.height + 10)
+
 
 
     
