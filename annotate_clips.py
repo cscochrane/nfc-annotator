@@ -10,7 +10,6 @@ import matplotlib.pyplot as plt
 from PIL import Image
 from scipy.io import wavfile
 from scipy.signal import spectrogram
-from streamlit_drawable_canvas import st_canvas
 from datetime import datetime
 
 
@@ -334,46 +333,47 @@ elif st.session_state.page == "annotate":
         st.warning(f"Skipped {file_name}")
         st.experimental_rerun()
     
-    # --- Save Annotation ---
-        # --- Save Annotation ---
-    if st.button("Save Annotation"):
-        if canvas_result.json_data and canvas_result.json_data["objects"]:
-            for obj in canvas_result.json_data["objects"]:
-                if obj["type"] != "rect":
-                    continue
-                left = obj["left"]
-                top = obj["top"]
-                width = obj["width"]
-                height = obj["height"]
-                x0 = left
-                x1 = left + width
-                y0 = top
-                y1 = top + height
-
-                # Convert canvas pixel coords to spectrogram time/freq
-                start_time = extent[0] + (x0 / img_width) * (extent[1] - extent[0])
-                end_time = extent[0] + (x1 / img_width) * (extent[1] - extent[0])
-                high_freq = extent[2] + ((img_height - y0) / img_height) * (extent[3] - extent[2])
-                low_freq = extent[2] + ((img_height - y1) / img_height) * (extent[3] - extent[2])
-
-                # Create and send annotation
-                annotation = {
-                    "filename": file_name,
-                    "label": final_label,
-                    "start_time": float(min(start_time, end_time)),
-                    "end_time": float(max(start_time, end_time)),
-                    "low_freq": float(min(low_freq, high_freq)),
-                    "high_freq": float(max(low_freq, high_freq)),
-                    "annotator": st.session_state.get("user", "anonymous")
-                }
-
-                response = insert_annotation(supabase, annotation)
-                if response.get("status_code", 200) >= 400:
-                    st.error(f"Failed to insert annotation: {response}")
-
-            st.success(f"Saved {len(canvas_result.json_data['objects'])} annotations for {file_name}")
-            st.experimental_rerun()
-        else:
-            st.warning("No boxes drawn.")
+   # --- Save Annotation ---
+    import json
     
+    # This retrieves the canvas data (bounding boxes)
+    box_data = st.experimental_get_query_params().get("Streamlit.setComponentValue", [])
+    
+    if st.button("Save Annotation"):
+        if box_data:
+            try:
+                rects = json.loads(box_data[0]) if isinstance(box_data, list) else box_data
+                for box in rects:
+                    x = box["x"]
+                    y = box["y"]
+                    w = box["w"]
+                    h = box["h"]
+                    x0, x1 = x, x + w
+                    y0, y1 = y, y + h
+    
+                    start_time = extent[0] + (x0 / img_width) * (extent[1] - extent[0])
+                    end_time = extent[0] + (x1 / img_width) * (extent[1] - extent[0])
+                    high_freq = extent[2] + ((img_height - y0) / img_height) * (extent[3] - extent[2])
+                    low_freq = extent[2] + ((img_height - y1) / img_height) * (extent[3] - extent[2])
+    
+                    annotation = {
+                        "filename": file_name,
+                        "label": final_label,
+                        "start_time": float(min(start_time, end_time)),
+                        "end_time": float(max(start_time, end_time)),
+                        "low_freq": float(min(low_freq, high_freq)),
+                        "high_freq": float(max(low_freq, high_freq)),
+                        "annotator": st.session_state.get("user", "anonymous")
+                    }
+    
+                    response = insert_annotation(supabase, annotation)
+                    if response.get("status_code", 200) >= 400:
+                        st.error(f"Failed to insert annotation: {response}")
+                st.success(f"✅ Saved {len(rects)} annotations for {file_name}")
+                st.experimental_rerun()
+            except Exception as e:
+                st.error(f"❌ Error saving annotations: {e}")
+        else:
+            st.warning("No bounding boxes found.")
+
     st.button("⬅️ Back to Home", on_click=lambda: go_to("home"))
