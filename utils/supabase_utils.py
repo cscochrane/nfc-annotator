@@ -12,3 +12,6 @@ def upload_to_supabase(client: Client, bucket_name: str, filename: str, file_dat
         file=file_data,
         file_options={"content-type": "audio/wav"}
     )
+def insert_annotation(client: Client, annotation: dict):
+    response = client.table("annotations").insert(annotation).execute()
+    return response
