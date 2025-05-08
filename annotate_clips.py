@@ -247,15 +247,40 @@ elif st.session_state.page == "annotate":
         img = img.convert("RGBA")
 
     st.markdown("### Draw bounding boxes and select label")
+    from streamlit_drawable_canvas import st_canvas
+    from PIL import Image
+    import numpy as np
+    import io
+    
+    st.markdown("### Draw bounding boxes for flight calls")
+    
+    # Convert spectrogram to PIL Image if needed
+    if isinstance(img, np.ndarray):
+        img = Image.fromarray(img)
+    
     canvas_result = st_canvas(
         fill_color="rgba(255, 0, 0, 0.3)",
         stroke_width=2,
         background_image=img,
-        height=300,
-        width=300,
+        update_streamlit=True,
+        height=img.height,
+        width=img.width,
         drawing_mode="rect",
-        key="canvas",
+        key="canvas"
     )
+    
+    # Show box data and let user assign species
+    if canvas_result.json_data is not None:
+        objects = canvas_result.json_data.get("objects", [])
+        for i, obj in enumerate(objects):
+            left = int(obj["left"])
+            top = int(obj["top"])
+            width = int(obj["width"])
+            height = int(obj["height"])
+            st.markdown(f"**Box {i+1}:**")
+            label = st.selectbox(f"Label for Box {i+1}", options=species_options, key=f"label_{i}")
+            st.text(f"Coordinates: left={left}, top={top}, width={width}, height={height}")
+
 
     
     # --- Species label ---
