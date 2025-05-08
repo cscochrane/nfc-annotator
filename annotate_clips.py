@@ -49,6 +49,16 @@ if st.session_state.page == "home":
 elif st.session_state.page == "upload":
     st.title("📤 Upload Your NFC Recording")
 
+    # === User login ===
+    if "user" not in st.session_state:
+        st.session_state.user = ""
+
+    st.session_state.user = st.text_input("Your name or email (for tracking):", value=st.session_state.user)
+
+    if not st.session_state.user.strip():
+        st.warning("Please enter your name or email to upload.")
+        st.stop()
+
     uploaded_file = st.file_uploader("Choose a .wav file", type=["wav"])
     if uploaded_file is not None:
         filename = uploaded_file.name
@@ -63,16 +73,29 @@ elif st.session_state.page == "upload":
 
         # Upload to Supabase bucket
         bucket_name = "nfc-uploads"
-        response = supabase.storage.from_(bucket_name).upload(f"{filename}", file_data, {"content-type": "audio/wav"})
+        response = supabase.storage.from_(bucket_name).upload(
+            f"{filename}", file_data, {"content-type": "audio/wav"}
+        )
 
         if "error" not in response:
             st.success(f"Uploaded {filename} to cloud storage!")
+
+            # Log uploader info to Supabase table
+            upload_record = {
+                "filename": filename,
+                "uploader": st.session_state.get("user", "anonymous")
+            }
+            response = supabase.table("uploads").insert(upload_record).execute()
+
+            if response.get("status_code", 200) >= 400:
+                st.warning(f"Upload succeeded but failed to log uploader info: {response}")
         else:
             st.error(f"Upload failed: {response['error']['message']}")
 
         os.remove(temp_path)
 
-    st.button("⬅️ Back to Home", on_click=lambda: go_to("home"))  # ✅ OUTSIDE the 'if'
+    st.button("⬅️ Back to Home", on_click=lambda: go_to("home"))
+
 
 elif st.session_state.page == "annotate":
     st.title("🖍️ Annotate Public Recordings")
