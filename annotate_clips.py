@@ -99,8 +99,11 @@ elif st.session_state.page == "upload":
             st.code(traceback.format_exc())  # Shows the exact StorageApiError message
 
         else:
-            st.error(f"Upload failed: {response['error']['message']}")
-
+            if response and isinstance(response, dict) and 'error' in response and 'message' in response['error']:
+                st.error(f"Upload failed: {response['error']['message']}")
+            else:
+                st.error("Upload failed: An unexpected error occurred.")
+                st.write("Response object:", response)
         os.remove(temp_path)
 
     st.button("⬅️ Back to Home", on_click=lambda: go_to("home"))
