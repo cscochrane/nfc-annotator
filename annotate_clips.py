@@ -240,16 +240,23 @@ elif st.session_state.page == "annotate":
 
         
     # --- Drawable Canvas ---
+    from PIL import Image
+
+    # Make sure the image is in RGBA mode (required by st_canvas background_image)
+    if img.mode != "RGBA":
+        img = img.convert("RGBA")
+
     st.markdown("### Draw bounding boxes and select label")
     canvas_result = st_canvas(
         fill_color="rgba(255, 0, 0, 0.3)",
         stroke_width=2,
         background_image=img,
-        update_streamlit=True,
-        height=600,
+        height=300,
+        width=300,
         drawing_mode="rect",
-        key=f"canvas_{file_name}",  # ✅ unique key for each file
+        key="canvas",
     )
+
     
     # --- Species label ---
     search_term = st.text_input("Search for species (code or name):")
