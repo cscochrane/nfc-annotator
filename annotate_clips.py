@@ -132,25 +132,34 @@ elif st.session_state.page == "annotate":
     LABEL_OPTIONS = sorted(SPECIES_MAP.keys())
     
     # --- Load files ---
-    # --- Load .wav files from Supabase and filter annotated ones ---
-    all_files = list_wav_files(supabase)
-    annotated_files = get_annotated_filenames(supabase)
     # Get all .wav files in the Supabase bucket
-    supabase = get_supabase_client()
     all_remote_files = list_wav_files(supabase)
 
+    # Get already-annotated filenames
+    annotated_files = set(get_annotated_filenames(supabase))
 
-    # Get filenames already annotated (e.g., ['clip001.wav', ...])
-    labeled_files = set(labels_df['file'].unique())
+    # Filter only files not yet annotated
+    unlabeled_files = [f for f in all_remote_files if f not in annotated_files]
 
-    # Keep only files not yet annotated
-    unlabeled_files = [f for f in all_remote_files if os.path.basename(f) not in labeled_files]
+    # Stop if everything is labeled
+    if not unlabeled_files:
+    st.success("🎉 All clips labeled!")
+    st.button("⬅️ Back to Home", on_click=lambda: go_to("home"))
+    st.stop()
 
+    # Pick the first unlabeled file
+    current_file = unlabeled_files[0]
+    file_name = os.path.basename(current_file)
 
-    # --- UI ---
-    st.title("NFC Annotator with Bounding Boxes")
-    
-    unlabeled_files = [f for f in wav_files if os.path.basename(f) not in labels_df['file'].unique()]
+    # Download file locally for playback and processing
+    local_wav_path = download_wav_file(supabase, current_file)
+    if not local_wav_path:
+    st.error(f"❌ Failed to download {current_file}")
+    st.stop()
+
+    st.subheader(f"Annotating: {file_name}")
+    st.audio(local_wav_path)  # ✅ Audio playback
+  
     if not unlabeled_files:
         st.success("🎉 All clips labeled!")
         st.button("⬅️ Back to Home", on_click=lambda: go_to("home"))  # ✅ Add this here
