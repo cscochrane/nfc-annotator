@@ -19,31 +19,6 @@ from utils.spectrogram import compute_zoomed_spectrogram, render_spectrogram_ima
 # === SUPABASE CONFIG ===
 supabase = get_supabase_client()
 
-if uploaded_file is not None:
-    filename = uploaded_file.name
-
-    with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
-        tmp_file.write(uploaded_file.read())
-        temp_path = tmp_file.name
-
-    with open(temp_path, "rb") as f:
-        file_data = f.read()
-
-    response = upload_to_supabase(
-        client=supabase,
-        bucket_name="nfc-uploads",
-        filename=filename,
-        file_data=file_data
-    )
-
-    if "error" not in response:
-        st.success(f"Uploaded {filename} to cloud storage!")
-    else:
-        st.error(f"Upload failed: {response['error']['message']}")
-
-    os.remove(temp_path)
-
-
 # --- Page navigation setup ---
 if "page" not in st.session_state:
     st.session_state.page = "home"
