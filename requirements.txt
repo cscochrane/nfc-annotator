@@ -4,5 +4,5 @@ matplotlib
 pandas
 numpy
 scipy
-Pillow==9.4.0
+Pillow==10.2.0
 supabase
