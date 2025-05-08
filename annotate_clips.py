@@ -182,18 +182,18 @@ elif st.session_state.page == "annotate":
     if audio.ndim > 1:
         audio = audio[:, 0]
     audio = audio / np.max(np.abs(audio)) * 6.0  # normalize + amplify
-    
-    # --- Compute Spectrogram ---
-   # Sliders (keep these lines as-is)
-zoom_time_range = st.slider("Zoom Time (s)", 0.0, float(len(audio) / sample_rate), (0.0, float(len(audio) / sample_rate)), step=0.01)
-zoom_freq_range = st.slider("Zoom Frequency (Hz)", 0, 11000, (0, 11000), step=100)
+        # --- Compute Spectrogram ---
+    # Sliders (keep these lines as-is)
+    zoom_time_range = st.slider("Zoom Time (s)", 0.0, float(len(audio) / sample_rate), (0.0, float(len(audio) / sample_rate)), step=0.01)
+    zoom_freq_range = st.slider("Zoom Frequency (Hz)", 0, 11000, (0, 11000), step=100)
 
-# Use utility functions
-Sxx_inverted, extent = compute_zoomed_spectrogram(
-    audio, sample_rate, fft_size, zoom_time_range, zoom_freq_range
-)
+    # Use utility functions
+    Sxx_inverted, extent = compute_zoomed_spectrogram(
+        audio, sample_rate, fft_size, zoom_time_range, zoom_freq_range
+    )
 
-img, (img_width, img_height) = render_spectrogram_image(Sxx_inverted, extent)
+    img, (img_width, img_height) = render_spectrogram_image(Sxx_inverted, extent)
+
 
         
     # --- Drawable Canvas ---
