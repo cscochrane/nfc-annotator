@@ -217,7 +217,7 @@ elif st.session_state.page == "annotate":
         st.stop()
     
     # --- FFT Window Size ---
-    fft_size = st.selectbox("FFT Window Size", [256, 512, 1024, 2048], index=2)
+    fft_size = st.selectbox("FFT Window Size", [256, 512, 1024, 2048], index=2, key="fft_size_selector")
     
     # --- Load Audio ---
     sample_rate, audio = wavfile.read(local_wav_path)  # ✅
@@ -225,7 +225,6 @@ elif st.session_state.page == "annotate":
         audio = audio[:, 0]
     audio = audio / np.max(np.abs(audio)) * 6.0  # normalize + amplify
         # --- Compute Spectrogram ---
-    fft_size = st.selectbox("FFT Window Size", [256, 512, 1024, 2048], index=2)
     sample_rate, audio = wavfile.read(local_wav_path)
     if audio.ndim > 1:
         audio = audio[:, 0]
@@ -252,45 +251,5 @@ elif st.session_state.page == "annotate":
     
    # --- Save Annotation ---
     import json
-    
-    # This retrieves the canvas data (bounding boxes)
-    box_data = st._get_widget_value("spectrogram_canvas") or []
-    
-    if st.button("Save Annotation"):
-        if box_data:
-            try:
-                rects = json.loads(box_data[0]) if isinstance(box_data, list) else box_data
-                for box in rects:
-                    x = box["x"]
-                    y = box["y"]
-                    w = box["w"]
-                    h = box["h"]
-                    x0, x1 = x, x + w
-                    y0, y1 = y, y + h
-    
-                    start_time = extent[0] + (x0 / img_width) * (extent[1] - extent[0])
-                    end_time = extent[0] + (x1 / img_width) * (extent[1] - extent[0])
-                    high_freq = extent[2] + ((img_height - y0) / img_height) * (extent[3] - extent[2])
-                    low_freq = extent[2] + ((img_height - y1) / img_height) * (extent[3] - extent[2])
-    
-                    annotation = {
-                        "filename": file_name,
-                        "label": final_label,
-                        "start_time": float(min(start_time, end_time)),
-                        "end_time": float(max(start_time, end_time)),
-                        "low_freq": float(min(low_freq, high_freq)),
-                        "high_freq": float(max(low_freq, high_freq)),
-                        "annotator": st.session_state.get("user", "anonymous")
-                    }
-    
-                    response = insert_annotation(supabase, annotation)
-                    if response.get("status_code", 200) >= 400:
-                        st.error(f"Failed to insert annotation: {response}")
-                st.success(f"✅ Saved {len(rects)} annotations for {file_name}")
-                st.experimental_rerun()
-            except Exception as e:
-                st.error(f"❌ Error saving annotations: {e}")
-        else:
-            st.warning("No bounding boxes found.")
 
     st.button("⬅️ Back to Home", on_click=lambda: go_to("home"))
