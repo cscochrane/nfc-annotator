@@ -1,8 +1,8 @@
-streamlit==1.25.0
-streamlit-drawable-canvas==0.9.3
+streamlit
+streamlit-drawable-canvas
 matplotlib
 pandas
 numpy
 scipy
-Pillow==9.5.0
+Pillow
 supabase
