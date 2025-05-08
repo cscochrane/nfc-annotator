@@ -83,7 +83,8 @@ elif st.session_state.page == "upload":
                 # Log uploader info
                 upload_record = {
                     "filename": filename,
-                    "uploader": st.session_state.get("user", "anonymous")
+                    "uploader": st.session_state.get("user", "anonymous"),
+                    "timestamp": datetime.utcnow().isoformat()
                 }
                 result = supabase.table("uploads").insert(upload_record).execute()
 
@@ -100,7 +101,8 @@ elif st.session_state.page == "upload":
             # Log uploader info to Supabase table
             upload_record = {
                 "filename": filename,
-                "uploader": st.session_state.get("user", "anonymous")
+                "uploader": st.session_state.get("user", "anonymous"),
+                "timestamp": datetime.utcnow().isoformat()
             }
             response = supabase.table("uploads").insert(upload_record).execute()
 
