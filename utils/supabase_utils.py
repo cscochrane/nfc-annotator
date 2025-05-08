@@ -15,3 +15,20 @@ def upload_to_supabase(client: Client, bucket_name: str, filename: str, file_dat
 def insert_annotation(client: Client, annotation: dict):
     response = client.table("annotations").insert(annotation).execute()
     return response
+
+import tempfile
+
+def list_wav_files(client: Client, bucket_name: str = "nfc-uploads"):
+    response = client.storage.from_(bucket_name).list()
+    if isinstance(response, list):
+        return [f["name"] for f in response if f["name"].endswith(".wav")]
+    return []
+
+def download_wav_file(client: Client, filename: str, bucket_name: str = "nfc-uploads"):
+    data = client.storage.from_(bucket_name).download(filename)
+    if isinstance(data, bytes):
+        temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".wav")
+        temp_file.write(data)
+        temp_file.close()
+        return temp_file.name
+    return None
