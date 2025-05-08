@@ -236,7 +236,7 @@ elif st.session_state.page == "annotate":
     Sxx_inverted, extent = compute_zoomed_spectrogram(audio, sample_rate, fft_size, zoom_time_range, zoom_freq_range)
     img, _ = render_spectrogram_image(Sxx_inverted, extent)
 
-    st.image(img, caption="Spectrogram", use_column_width=True)
+    st.image(img, caption="Spectrogram", use_container_width=True)
 
 
     # --- Species label ---
