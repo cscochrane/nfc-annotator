@@ -88,7 +88,6 @@ elif st.session_state.page == "upload":
                     "filename": filename,
                     "uploader": st.session_state.user.strip(),
                     "timestamp": datetime.utcnow().isoformat(),
-                    "bucket": bucket_name,
                     "path": f"{bucket_name}/{filename}"
                 }
 
