@@ -73,12 +73,29 @@ elif st.session_state.page == "upload":
 
         # Upload to Supabase bucket
         bucket_name = "nfc-uploads"
-        response = supabase.storage.from_(bucket_name).upload(
-            f"{filename}", file_data, {"content-type": "audio/wav", "x-upsert": "true"}
-        )
+        try:
+            response = supabase.storage.from_(bucket_name).upload(
+                f"{filename}", file_data, {"content-type": "audio/wav", "x-upsert": "true"}
+            )
+            if "error" not in response:
+                st.success(f"Uploaded {filename} to cloud storage!")
 
-        if "error" not in response:
-            st.success(f"Uploaded {filename} to cloud storage!")
+                # Log uploader info
+                upload_record = {
+                    "filename": filename,
+                    "uploader": st.session_state.get("user", "anonymous")
+                }
+                result = supabase.table("uploads").insert(upload_record).execute()
+
+                if result.get("status_code", 200) >= 400:
+                st.warning(f"Upload succeeded but failed to log uploader info: {result}")
+            else:
+                st.error(f"Upload failed: {response['error']}")
+        except Exception as e:
+            import traceback
+            st.error("❌ Upload crashed:")
+            st.code(traceback.format_exc())  # Shows the exact StorageApiError message
+
 
             # Log uploader info to Supabase table
             upload_record = {
