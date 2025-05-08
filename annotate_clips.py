@@ -88,6 +88,9 @@ elif st.session_state.page == "upload":
                     "uploader": st.session_state.get("user", "anonymous"),
                     "timestamp": datetime.utcnow().isoformat()
                 }
+                from dataclasses import asdict
+
+                upload_record = asdict(upload_response)
                 result = supabase.table("uploads").insert(upload_record).execute()
 
                 if getattr(result, "status_code", 200) >= 400:
