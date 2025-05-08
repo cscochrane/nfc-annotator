@@ -85,13 +85,14 @@ elif st.session_state.page == "upload":
                 # Log uploader info
                 upload_record = {
                     "filename": filename,
-                    "uploader": "uploader": "anonymous"
+                    "uploader": st.session_state.get("user", "anonymous"),
                     "timestamp": datetime.utcnow().isoformat()
                 }
                 result = supabase.table("uploads").insert(upload_record).execute()
 
                 if result.get("status_code", 200) >= 400:
                     st.warning(f"Upload succeeded but failed to log uploader info: {result}")
+)
             else:
                 st.error(f"Upload failed: {response['error']}")
         except Exception as e:
@@ -99,17 +100,6 @@ elif st.session_state.page == "upload":
             st.error("❌ Upload crashed:")
             st.code(traceback.format_exc())  # Shows the exact StorageApiError message
 
-
-            # Log uploader info to Supabase table
-            upload_record = {
-                "filename": filename,
-                "uploader": st.session_state.get("user", "anonymous"),
-                "timestamp": datetime.utcnow().isoformat()
-            }
-            response = supabase.table("uploads").insert(upload_record).execute()
-
-            if response.get("status_code", 200) >= 400:
-                st.warning(f"Upload succeeded but failed to log uploader info: {response}")
         else:
             st.error(f"Upload failed: {response['error']['message']}")
 
