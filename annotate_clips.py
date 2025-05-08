@@ -143,9 +143,9 @@ elif st.session_state.page == "annotate":
 
     # Stop if everything is labeled
     if not unlabeled_files:
-    st.success("🎉 All clips labeled!")
-    st.button("⬅️ Back to Home", on_click=lambda: go_to("home"))
-    st.stop()
+        st.success("🎉 All clips labeled!")
+        st.button("⬅️ Back to Home", on_click=lambda: go_to("home"))
+        st.stop()
 
     # Pick the first unlabeled file
     current_file = unlabeled_files[0]
@@ -154,8 +154,8 @@ elif st.session_state.page == "annotate":
     # Download file locally for playback and processing
     local_wav_path = download_wav_file(supabase, current_file)
     if not local_wav_path:
-    st.error(f"❌ Failed to download {current_file}")
-    st.stop()
+        st.error(f"❌ Failed to download {current_file}")
+        st.stop()
 
     st.subheader(f"Annotating: {file_name}")
     st.audio(local_wav_path)  # ✅ Audio playback
