@@ -195,6 +195,7 @@ elif st.session_state.page == "annotate":
         st.experimental_rerun()
     
     # --- Save Annotation ---
+        # --- Save Annotation ---
     if st.button("Save Annotation"):
         if canvas_result.json_data and canvas_result.json_data["objects"]:
             for obj in canvas_result.json_data["objects"]:
@@ -208,25 +209,27 @@ elif st.session_state.page == "annotate":
                 x1 = left + width
                 y0 = top
                 y1 = top + height
-    
+
                 # Convert canvas pixel coords to spectrogram time/freq
                 start_time = extent[0] + (x0 / img_width) * (extent[1] - extent[0])
                 end_time = extent[0] + (x1 / img_width) * (extent[1] - extent[0])
                 high_freq = extent[2] + ((img_height - y0) / img_height) * (extent[3] - extent[2])
                 low_freq = extent[2] + ((img_height - y1) / img_height) * (extent[3] - extent[2])
-    
-                # Add annotation as a new row
-                new_row = pd.DataFrame([{
-                    'file': file_name,
-                    'label': final_label,
-                    'start_time': min(start_time, end_time),
-                    'end_time': max(start_time, end_time),
-                    'low_freq': min(low_freq, high_freq),
-                    'high_freq': max(low_freq, high_freq)
-                }])
-                labels_df = pd.concat([labels_df, new_row], ignore_index=True)
-    
-            labels_df.to_csv(LABELS_FILE, index=False)
+
+                # Create and send annotation
+                annotation = {
+                    "filename": file_name,
+                    "label": final_label,
+                    "start_time": float(min(start_time, end_time)),
+                    "end_time": float(max(start_time, end_time)),
+                    "low_freq": float(min(low_freq, high_freq)),
+                    "high_freq": float(max(low_freq, high_freq))
+                }
+
+                response = insert_annotation(supabase, annotation)
+                if response.get("status_code", 200) >= 400:
+                    st.error(f"Failed to insert annotation: {response}")
+
             st.success(f"Saved {len(canvas_result.json_data['objects'])} annotations for {file_name}")
             st.experimental_rerun()
         else:
