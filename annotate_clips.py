@@ -136,7 +136,9 @@ elif st.session_state.page == "annotate":
     all_files = list_wav_files(supabase)
     annotated_files = get_annotated_filenames(supabase)
     # Get all .wav files in the Supabase bucket
-    all_remote_files = list_wav_files()
+    supabase = get_supabase_client()
+    all_remote_files = list_wav_files(supabase)
+
 
     # Get filenames already annotated (e.g., ['clip001.wav', ...])
     labeled_files = set(labels_df['file'].unique())
